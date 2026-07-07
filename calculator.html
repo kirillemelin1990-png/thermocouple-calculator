@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-Type Thermocouple Calculator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0a0a0a;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 16px;
+}
+
+.container {
+    max-width: 420px;
+    width: 100%;
+    background: #1a1a1a;
+    padding: 24px 20px 20px;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+    border: 1px solid #333;
+}
+
+h2 {
+    text-align: center;
+    font-weight: 400;
+    letter-spacing: 1px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #f0c040;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    color: #aaa;
+    margin: 16px 0 4px 4px;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="number"] {
+    flex: 1;
+    font-size: 24px;
+    padding: 12px 14px;
+    background: #252525;
+    border: 1px solid #444;
+    border-radius: 10px;
+    color: #fff;
+    outline: none;
+    transition: 0.2s;
+}
+
+input[type="number"]:focus {
+    border-color: #f0c040;
+    background: #2a2a2a;
+}
+
+input[type="number"]::-webkit-inner-spin-button {
+    opacity: 0.5;
+}
+
+.unit {
+    font-size: 18px;
+    color: #888;
+    min-width: 40px;
+}
+
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 6px;
+}
+
+.btn-group button {
+    flex: 1;
+    min-width: 60px;
+    padding: 10px 0;
+    font-size: 15px;
+    border: none;
+    border-radius: 8px;
+    background: #2d2d2d;
+    color: #ccc;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: 500;
+}
+
+.btn-group button:hover {
+    background: #3d3d3d;
+    color: #fff;
+}
+
+.btn-group button.active {
+    background: #f0c040;
+    color: #111;
+}
+
+.result-box {
+    margin-top: 24px;
+    padding: 18px;
+    background: #0f0f0f;
+    border-radius: 12px;
+    border: 1px solid #2a2a2a;
+    text-align: center;
+}
+
+.result-box .temp {
+    font-size: 48px;
+    font-weight: 600;
+    color: #f0c040;
+    line-height: 1.2;
+}
+
+.result-box .temp-label {
+    font-size: 14px;
+    color: #666;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+.result-box .detail {
+    font-size: 13px;
+    color: #555;
+    margin-top: 10px;
+    border-top: 1px solid #222;
+    padding-top: 10px;
+}
+
+.footer {
+    margin-top: 16px;
+    font-size: 12px;
+    color: #444;
+    text-align: center;
+}
+
+.footer span {
+    color: #f0c040;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🌡 K-термопара</h2>
+
+<!-- Напряжение -->
+<label>Напряжение термопары (мВ)</label>
+<div class="input-row">
+    <input type="number" id="mv" step="0.01" value="0.50">
+    <span class="unit">мВ</span>
+</div>
+
+<!-- Быстрые кнопки мВ -->
+<div class="btn-group">
+    <button onclick="setMV(0.00)">0.00</button>
+    <button onclick="setMV(0.50)" class="active">0.50</button>
+    <button onclick="setMV(1.00)">1.00</button>
+    <button onclick="setMV(2.00)">2.00</button>
+    <button onclick="setMV(5.00)">5.00</button>
+</div>
+
+<!-- Температура воздуха -->
+<label>🌬 Температура холодного спая (воздух) °C</label>
+<div class="input-row">
+    <input type="number" id="room" step="0.5" value="25.0">
+    <span class="unit">°C</span>
+</div>
+
+<!-- Быстрые кнопки температуры воздуха -->
+<div class="btn-group">
+    <button onclick="setRoom(0)">0°</button>
+    <button onclick="setRoom(20)">20°</button>
+    <button onclick="setRoom(25)" class="active">25°</button>
+    <button onclick="setRoom(30)">30°</button>
+</div>
+
+<!-- Результат -->
+<div class="result-box">
+    <div class="temp" id="result">37.5</div>
+    <div class="temp-label">°C — измеряемая температура</div>
+    <div class="detail" id="detail">ΔT = 12.5 °C  |  +25.0 °C</div>
+</div>
+
+<div class="footer">
+    Коэффициент: <span>0.041 мВ/°C</span> &nbsp;·&nbsp; Погрешность &lt; 1%
+</div>
+
+</div>
+
+<script>
+// Константа: чувствительность K-термопары
+const SENSITIVITY = 0.041; // мВ на °C
+
+// Элементы DOM
+const mvInput = document.getElementById('mv');
+const roomInput = document.getElementById('room');
+const resultEl = document.getElementById('result');
+const detailEl = document.getElementById('detail');
+
+// Основной расчёт
+function calculate() {
+    const mv = parseFloat(mvInput.value) || 0;
+    const room = parseFloat(roomInput.value) || 0;
+
+    // Разница температур: мВ / 0.041
+    const deltaT = mv / SENSITIVITY;
+
+    // Итоговая температура
+    const temp = room + deltaT;
+
+    // Вывод
+    resultEl.textContent = temp.toFixed(1);
+    detailEl.textContent = `ΔT = ${deltaT.toFixed(1)} °C  |  +${room.toFixed(1)} °C (воздух)`;
+}
+
+// Установить напряжение (мВ)
+function setMV(value) {
+    mvInput.value = value;
+    // Подсветка кнопок
+    document.querySelectorAll('.btn-group:first-of-type button').forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.textContent) === value);
+    });
+    calculate();
+}
+
+// Установить температуру воздуха
+function setRoom(value) {
+    roomInput.value = value;
+    document.querySelectorAll('.btn-group:last-of-type button').forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.textContent) === value);
+    });
+    calculate();
+}
+
+// События на ввод
+mvInput.addEventListener('input', function() {
+    // Снимаем подсветку с кнопок мВ
+    document.querySelectorAll('.btn-group:first-of-type button').forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.textContent) === parseFloat(this.value));
+    });
+    calculate();
+});
+
+roomInput.addEventListener('input', function() {
+    document.querySelectorAll('.btn-group:last-of-type button').forEach(btn => {
+        btn.classList.toggle('active', parseFloat(btn.textContent) === parseFloat(this.value));
+    });
+    calculate();
+});
+
+// Запуск
+calculate();
+</script>
+
+</body>
+</html>
